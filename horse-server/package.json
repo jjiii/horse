@@ -1,0 +1,15 @@
+{
+  "name": "horse-server",
+  "version": "1.0.0",
+  "description": "horse on Docker",
+  "author": "<first.last@example.com>",
+  "main": "server.js",
+  "scripts": {
+    "start": "node receive.js"
+  },
+  "dependencies": {
+    "websocket-stream": "^5.5.0",
+    "tentacoli": "^1.0.0",
+    "ws": "^7.2.1"
+  }
+}
