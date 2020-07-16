@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>horse-client</title>
+    <% if (htmlWebpackPlugin.options.nodeModules) { %>
+      <!-- Add `node_modules/` to global paths so `require` works properly in development -->
+      <script>
+        require('module').globalPaths.push('<%= htmlWebpackPlugin.options.nodeModules.replace(/\\/g, '\\\\') %>')
+      </script>
+    <% } %>
+
+    <!-- sb admin-->
+    <link href="static/sb-admin2-4.0.7/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="static/sb-admin2-4.0.7/vendor/googleapis-fonts/nunito.css" rel="stylesheet" type="text/css">
+    <link href="static/sb-admin2-4.0.7/css/sb-admin-2.min.css" rel="stylesheet">
+
+  </head>
+  <body>
+    <div id="app"></div>
+    <!-- Set `__static` path to static files in production -->
+    <%  if (!require('process').browser) { %>
+      <script>
+        if (process.env.NODE_ENV !== 'development') window.__static = require('path').join(__dirname, '/static').replace(/\\/g, '\\\\')
+      </script>
+    <% } %>
+    <!-- webpack builds are automatically injected -->
+
+
+    <script src="/static/sb-admin2-4.0.7/vendor/jquery/jquery.min.js"></script>
+    <script>
+        $ = jQuery = module.exports;
+    </script>
+    <script src="/static/sb-admin2-4.0.7/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/sb-admin2-4.0.7/vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script src="/static/sb-admin2-4.0.7/js/sb-admin-2.min.js"></script>
+
+    <!-- electron  import jquery
+      https://www.electronjs.org/docs/faq#i-can-not-use-jqueryrequirejsmeteorangularjs-in-electron
+    -->
+    <!-- <script>
+      window.nodeRequire = require;
+      delete window.require;
+      delete window.exports;
+      delete window.module;
+    </script> -->
+
+  </body>
+</html>
