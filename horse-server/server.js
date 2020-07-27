@@ -2,7 +2,6 @@ const { URL } = require('url')
 const net = require('net')
 const http = require('http')
 
-const receive = require('./receive');
 
 
 
@@ -46,5 +45,5 @@ server.on('connect', (req, cltSocket, head) => {
 
 
 server.listen(9999, () => {
-		console.log('https proxy server listen 9999');
+		console.log('https connect proxy server listen:' ,  server.address().port);
 });

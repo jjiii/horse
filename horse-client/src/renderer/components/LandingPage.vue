@@ -63,7 +63,7 @@
   import SystemInformation from './LandingPage/SystemInformation'
   import {socks5}  from './socks/Socks5.js'
 
-  import {Multiple}  from './multiple/Multiple.js'
+  import {Multiple, Channel}  from './multiple/Multiple.js'
   //const {Multiple} = require ('./muliple/Multiple')
 
 
@@ -76,51 +76,60 @@
   const {pipeline} = require('stream')
   const WS = require('ws')
 
-  const { simpleflake } = require('simpleflakes');
+  const { simpleflake } = require('simpleflakes')
+
+  //const multiplex = require('multiplex')
+  const { BPMux } = require('bpmux')
 
 
 
 
 //import {wsServer, httpServer} from './receive'
-import  starWS from './receive'
-
-starWS();
-
+//import  starWS from './receive'
+//starWS();
 
 
 
 
 
 
-function createWebsocket(){
+
+function createWS(){
     var ws = new WS('ws://localhost:3000/ws');
     ws.on('open', function open() {
       console.log('client: open ');
     });
-    ws.on('message', function incoming(data) {
-      console.log("client: recive ");
-      console.log("client:" + data.toString());
-    });
+//    ws.on('message', function incoming(data) {
+//      console.log("client recive:" + data.toString());
+//    });
     ws.on('error', function error(mess) {
       console.log("client: error"+mess);
     });
 
     return ws;
 }
+
 function wsToStream(ws){
-  var stream = WS.createWebSocketStream(ws, {encoding: 'utf8'});
-  stream.on('end', () => {
-    console.log('ws end');
-  });
-  stream.on('data', (chunk) => {
-    console.log("wsToStream on data: " + chunk);
-  });
+    var stream = WS.createWebSocketStream(ws, {encoding: 'utf8'});
+    stream.on('end', () => {
+      console.log('client wsToStream end');
+    });
+    //stream.on('data', (chunk) => {
+    //  console.log("client wsToStream on data: " + chunk);
+    //});
 
-  return stream;
+    return stream;
 }
-const ws = createWebsocket();
-const wsStream = wsToStream(ws);
 
+function wsStreamToBPMux(wsStream){
+    var mux = new BPMux(wsStream, { keep_alive: false });
+    return mux;
+}
+
+
+const ws = createWS();
+const wsStream = wsToStream(ws);
+const bpmux = wsStreamToBPMux(wsStream);
 
 
 
@@ -129,28 +138,35 @@ function localListen(){
     const server = net.createServer((socket) => {
 
           socket.on('data', (data) => {
-              console.log(socket);
-              console.log(socket.id);
-              console.log("socket on data:" );
+              console.log( "socket.id" + socket.id + " on data:");
               console.log(data.toString());
-              socket.pipe(wsStream,{end:false});
-          });
-          socket.on("error",function(err){
-            console.error(err);
-            socket.end();
+              //socket.pipe(wsStream,{end:false});
           });
 
-          socket.on('end', () => {
-            console.log('socket end' + socket.id);
-            socket.destroy();
-          });
 
 
     });
-    server.on('connection',(socket)=>{
+    server.on('connection',(socket) => {
           console.log("listen connection id :" + socket.id);
           if(!socket.id){
-            socket.id = simpleflake().toString()
+            socket.id = simpleflake().toString();
+            var stream = bpmux.multiplex();
+            socket.pipe(stream,  {end:false});
+
+            socket.on("error",function(err){
+              console.error('socket error destroy' + socket.id);
+              socket.destroy();
+              stream.destroy();
+            });
+
+            socket.on('end', () => {
+              console.log('socket end destroy' + socket.id);
+              socket.destroy();
+              stream.destroy();
+            });
+
+
+
             console.log("connection set socket.id :" + socket.id);
           }else{
             console.log("connection has socket.id :" + socket.id);
@@ -163,7 +179,7 @@ function localListen(){
         console.log("listen error" + err);
     });
 
-    server.listen(9999, () => {
+    server.listen(8888, () => {
         console.log(server.address());
     });
 
@@ -182,25 +198,52 @@ localListen();
             console.log(process.versions.node);
             console.log(process.versions.electron);
             //wsStream.pipe(m);
+
+            //var stream1 = bpmux.multiplex();
+
             //ws.send("a");
 
-            var m = new Multiple();
-
-            //m.on('readable', function() {
-            //    console.log("on readable");
-            //});
-
-            m.on('data', (chunk) => {
-              console.log('stream on data', chunk);
+            var m = new Multiple(wsStream);
+            m.on('bbb', (subChnnel) => {
+                console.log(subChnnel.id, subChnnel);
             });
 
-            //m.push("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+
+            var channel = m.newChannel();
+
+            channel.on('error', (err) => console.log(err));
+
+            //for(var i=0; i<1000; i++){
+            //  console.log(channel.push("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+            //}
+
+            var ii = 0;
+            channel.on('data', (chunk) => {
+              console.log('stream on data', chunk.length, ii++);
+            });
+            //console.log(channel.push("bb"));
+            channel.destroy();
+            channel.destroy();
+            //channel.end();
+            //console.log(channel.push("aaaaaaaa"));
+
+
+            wsStream.write('aaa');
+            //ws.send("a");
+
+
+
+            //channel.push("b");
+
+            //m.write('aaa');
             //m.push(null);
 
 
             //m.pipe(wsStream);
             //m.destroy();
             //m.push("b");
+
+
       },
 
     }
