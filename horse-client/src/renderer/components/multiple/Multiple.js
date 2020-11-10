@@ -86,8 +86,9 @@ class Multiple extends EventEmitter{
     var channel = this.allChannel.get(key);
     if(channel != null){
       channel.destroy();
+      this.allChannel.delete(key);
     }
-    this.allChannel.delete(key);
+
   }
 
   destroy(){
@@ -99,7 +100,7 @@ class Multiple extends EventEmitter{
 
   }
 
-  
+
 
   sendInquiryMessages(){
       this.outStream = outStream;
@@ -123,6 +124,9 @@ class Channel extends Duplex {
     this.id = id;
     console.log("Channel is create");
   }
+
+
+
 
   _read(size) {
      //resume();
