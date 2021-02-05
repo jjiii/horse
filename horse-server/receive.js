@@ -21,6 +21,7 @@ function wsServer(){
         console.log("wsServer: receive " );
         //console.log(data);
         console.log(data);
+        console.log(data.toString());
         ws.send("5440923399260605165abcd");
       });
       ws.on('error', function error (mess) {

@@ -14,53 +14,42 @@ class Multiple extends EventEmitter{
 
   init(){
 
+
     this.outStream.on('data', (data) => {
+
         console.log(this.id, this.allChannel);
         // console.log(typeof data,"wsToStream on message: " + data);
         var id =  data.slice(0,19);
-        var inquiry = data.slice(19,20);
-        var state = data.slice(20, 21);
-        var source = data.slice(21);
+        var state = data.slice(19,20); // 0:delete, 1:communication
+        var source = data.slice(20);
 
         //var buffer = Buffer.from(data);
         var isExistChannel = this.allChannel.get(id);
 
-        if(inquiry){
-            if(!isExistChannel){
-                //stream is close
+        if(state){
+            if(isExistChannel){
+                this.writeToChannel(isExistChannel, source);
             }else{
-
+                var newChannel = this.newChannel(id);
+                this.writeToChannel(newChannel, source);
             }
             return;
-        }
-
-
-
-
-        if(isExistChannel == null){
-          var newChannel = this.newChannel(id);
-
-          var isOk = newChannel.push(source);
-          if(!isOk){
-            channel.destroy("channel id: ", channel.id, " Over buffer and channel is destroy");
-          }
-          this.emit('message', newChannel);
         }else{
-          var isOk = isExistChannel.push(source);
-          if(!isOk){
-            channel.destroy("channel id: ", channel.id, " Over buffer and channel is destroy");
-          }
-          this.emit('message', isExistChannel);
+            this.deleteChannel(id);
         }
 
 
     });
+
+
 
     this.outStream.on('end', () => {
       console.log('wsToStream end');
     });
+
     this.outStream.on('error', (mess) => {
       console.log("wsToStream: error"+mess);
+      this.destroy();
     });
 
   }
@@ -70,10 +59,30 @@ class Multiple extends EventEmitter{
     if(id == null){
       id = simpleflake().toString();//19 Byte
     }
-    var newChannel = new Channel(id, null);
+
+    var newChannel = new Channel(id, 1, this.outStream, null);
 
     this.allChannel.set(id, newChannel);
     return newChannel;
+  }
+
+
+  deleteChannel(key){
+    var channel = this.allChannel.get(key);
+    if(channel != null){
+      channel.destroy();
+
+      this.allChannel.set(key, null);
+      this.allChannel.delete(key);
+    }
+
+  }
+
+  destroy(){
+    this.allChannel.forEach((value, key)=> {
+      this.deleteChannel(key);
+    })
+    this.allChannel.clear();
   }
 
   getChannelById(id){
@@ -81,24 +90,16 @@ class Multiple extends EventEmitter{
   }
 
 
-
-  deleteChannel(key){
-    var channel = this.allChannel.get(key);
-    if(channel != null){
-      channel.destroy();
-      this.allChannel.delete(key);
+  writeToChannel(channel, source){
+    var isOk = channel.push(source);
+    if(isOk){
+      this.emit('message', channel);
+    }else{
+      console.log("channel id: ", channel.id, " steam over buffer！");
+      //channel.destroy("channel id: ", channel.id, " Over buffer and channel is destroy");
     }
-
   }
 
-  destroy(){
-
-    this.allChannel.forEach((value, key)=> {
-      this.deleteChannel(key);
-    })
-    this.allChannel.clear();
-
-  }
 
 
 
@@ -114,14 +115,12 @@ class Multiple extends EventEmitter{
 
 class Channel extends Duplex {
 
-  outStream = null;
 
-  //inquiry = 0;    //whether or not inquiry state message; 0=no, 1=yes
-  state = "a";    //a=create, b=communication, c=delete
-
-  constructor(id, options) {
+  constructor(id, state, outSteam, options) {
     super(options);
     this.id = id;
+    this.state = state;
+    this.outStream = outSteam;
     console.log("Channel is create");
   }
 
@@ -136,9 +135,23 @@ class Channel extends Duplex {
   }
 
   _write(chunk, encoding, callback) {
-    outStream.write(this.id + 0 + this.state + chunk); //inquiry=0
+    this.outStream.write(chunk);
+    //this.outStream.write(this.id +  this.state + chunk); //inquiry=0
     console.log("Channel write");
   }
+
+  send(message){
+    var isOk = this.push(source);
+    if(!isOk){
+      console.log("channel id: ", this.id + " state:"+this.state, " steam over buffer！");
+    }
+    return isOk;
+  }
+
+  sendDelete(){
+
+  }
+
 
 }
 

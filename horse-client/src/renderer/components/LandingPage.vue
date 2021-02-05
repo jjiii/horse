@@ -204,12 +204,13 @@ localListen();
             //ws.send("a");
 
             var m = new Multiple(wsStream);
-            m.on('bbb', (subChnnel) => {
+            m.on('message', (subChnnel) => {
                 console.log(subChnnel.id, subChnnel);
             });
 
 
             var channel = m.newChannel();
+
 
             channel.on('error', (err) => console.log(err));
 
@@ -217,18 +218,20 @@ localListen();
             //  console.log(channel.push("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
             //}
 
-            var ii = 0;
-            channel.on('data', (chunk) => {
-              console.log('stream on data', chunk.length, ii++);
-            });
+            //channel.on('data', (chunk) => {
+            //  console.log('channel stream on data', chunk);
+            //});
+            //channel.push("a");
+            //channel.push("b");
+            channel.write("a");
             //console.log(channel.push("bb"));
             channel.destroy();
-            channel.destroy();
+            //channel.destroy();
             //channel.end();
             //console.log(channel.push("aaaaaaaa"));
 
 
-            wsStream.write('aaa');
+            //wsStream.write('aaa');
             //ws.send("a");
 
 
